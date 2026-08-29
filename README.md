@@ -59,4 +59,80 @@ Everything else in the architecture depends on correct IAM setup. Do this first 
 •	Create a KMS Customer Managed Key; enable it on S3, RDS, and Secrets Manager.
 •	Enable AWS CloudTrail in all regions and AWS Config for compliance rules.
 ```
+## SPRINT - 2
+### Data Collection — Collector Microservices (ECS Fargate)
+Three separate collector services — one per cloud provider — run as Docker containers on ECS Fargate. These are the Python connectors you built in Sprint 1, now containerised.
+
+2.1  Dockerise Each Connector
+```
+•	Create a Dockerfile in each connector folder (connectors/aws/, connectors/azure/, connectors/gcp/).
+•	Base image: python:3.12-slim. Install only what that connector needs from requirements.txt.
+•	ENTRYPOINT should run the fetch script on a schedule (use a simple cron wrapper or EventBridge trigger).
+•	Build and test locally: docker build -t aws-collector . && docker run --env-file .env aws-collector
+```
+
+2.2  Push Images to Amazon ECR
+```
+•	Create three ECR repositories: devops-dashboard/aws-collector, /azure-collector, /gcp-collector.
+•	Authenticate Docker to ECR: aws ecr get-login-password | docker login --username AWS ...
+•	Tag and push each image: docker tag aws-collector:latest <account>.dkr.ecr.us-east-1.amazonaws.com/...
+```
+
+2.3  Create ECS Fargate Task Definitions
+```
+•	In ECS, create a Cluster (Fargate). Then create one Task Definition per collector.
+•	Assign the ECS Task Role from Step 1.2 to each task.
+•	Set environment variables by referencing Secrets Manager ARNs — not plaintext values.
+•	Allocate 256 CPU / 512 MB memory per collector (adjust after profiling).
+```
+
+2.4  Schedule Collection with EventBridge
+```
+•	Create EventBridge Scheduled Rules: rate(1 day) for daily cost data, rate(1 hour) for resource metrics.
+•	Set the target to an ECS Run Task action for each collector task definition.
+•	This replaces the manual python scripts/fetch_sample_data.py from Sprint 1 with fully automated pulls.
+```
+
+### Data Ingestion Layer
+The ingestion layer is how data gets from the collector services into the central data platform. The blueprint shows two paths: batch (for historical cost data) and streaming (for real-time resource metrics).
+
+3.1  Batch Ingestion — AWS AppFlow & DMS
+```
+•	AWS AppFlow: use for pulling SaaS billing data or CSV files from external sources into S3.
+  –	Create a Flow: Source = custom connector or S3, Destination = S3 Data Lake bucket.
+  –	Set trigger: on-demand or scheduled (daily, aligned with your collector schedule).
+•	AWS DMS: use if you have an on-premise or third-party database as a source.
+  –	Create a Replication Instance (t3.medium is sufficient for this project).
+  –	Define source and target endpoints; run a full-load task initially, then CDC for ongoing changes.
+```
+
+3.2  File-Based Ingestion — AWS DataSync
+```
+•	Use DataSync to move files (billing exports, CSV logs) from on-premises or another S3 bucket.
+•	Create a DataSync Task: source location → destination S3 bucket → schedule.
+•	Enable data verification and transfer logging to CloudWatch.
+```
+
+3.3  Real-Time Ingestion — Kinesis Data Streams & Firehose
+```
+•	Create a Kinesis Data Stream (2 shards) for live resource metric events from CloudWatch.
+•	Create a Kinesis Data Firehose Delivery Stream: source = Kinesis Stream, destination = S3 bucket.
+  –	Enable data transformation via a Lambda function (to normalise schema before landing).
+  –	Set buffer: 5 MB or 300 seconds, whichever comes first.
+•	In EventBridge, create a rule matching CloudWatch alarm state changes → target = Kinesis Stream.
+•	Your ECS collectors can also write metric events directly to the Kinesis Stream using boto3.
+```
+
+<img width="989" height="269" alt="image" src="https://github.com/user-attachments/assets/e009e587-a037-4b0a-aa33-4952d96676f0" />
+
+
+
+
+
+
+
+
+
+
+
 
