@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Midnight";
 import AWS from "./pages/AWS";
 import Azure from "./pages/Azure";
 import GCP from "./pages/GCP";

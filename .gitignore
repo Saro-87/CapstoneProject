@@ -21,3 +21,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local dashboard database
+backend/*.db
+backend/.demo/

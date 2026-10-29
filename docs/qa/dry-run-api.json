@@ -1,0 +1,18 @@
+{
+  "mode": "synthetic",
+  "date": "2026-10-29 22:22:30.849603",
+  "api_requests": 80,
+  "concurrent_workers": 8,
+  "errors": 0,
+  "median_ms": 15.14,
+  "p95_ms": 54.93,
+  "cost_records_in_window": 300,
+  "totals_verified": {
+    "AWS": 12216.1,
+    "Azure": 7418.56,
+    "GCP": 4500.44
+  },
+  "resource_count": 83,
+  "alerts": 9,
+  "recommendations": 6
+}

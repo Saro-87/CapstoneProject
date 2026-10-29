@@ -5,7 +5,7 @@ Centralized AWS, Azure, and GCP resource and cost monitoring.
 ## Project structure
 
 - `backend/`: Python API, cloud services, database models, and reporting.
-- `frontend/`: React dashboard from sprint2.
+- `frontend/`: React dashboard with the selected Midnight theme connected to database APIs.
 - `connectors/`: standalone AWS, Azure, and GCP collection scripts.
 - `scripts/`: connection verification and sample collection.
 - `designs/`: supplied static frontend designs and mockups.
@@ -24,4 +24,12 @@ See [installation guide](docs/installation-guide.md) and [cloud setup](docs/clou
 `main` contains the integrated project. The existing `sprint1` and `sprint2` branches remain as historical work snapshots. This consolidation retains their commit ancestry. Continue future work on branches and merge completed work into `main` without deleting the sprint branches.
 
 Generated dependencies, Python caches, and OS metadata are excluded from the integrated tree; they remain in historical commits. No live cloud calls or application runtime tests were performed during consolidation.
+
+## Midnight dashboard integration
+
+The selected Midnight theme is connected to the stored-data backend in this checkout. See [local startup and database setup](docs/midnight-integration.md). Run `app.dashboard_main:app` for the integrated dashboard; static design previews remain in `designs/`.
+
+For a reproducible random-data preview, build the frontend and run `backend/.venv/Scripts/python scripts/dry_run_midnight.py --port 8001` from the repository root. This creates a separate demo database; it does not change real cloud data.
+
+The frontend build, six frontend checks and five backend checks pass locally. See the [dry-run results and production blockers](docs/qa/midnight-dry-run.md) and [theme-fix verification](docs/qa/midnight-theme-fix.md). This version is a local demonstration; public production still requires access protection, dependency advisory resolution, real ingestion/database validation and a staging deployment.
 
