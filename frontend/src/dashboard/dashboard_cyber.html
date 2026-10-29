@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudOps | Cyber Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0b1e;
+    --surface: rgba(16, 18, 45, 0.8);
+    --border: rgba(0, 255, 255, 0.15);
+    --text: #e0e6ff;
+    --text-dim: rgba(224, 230, 255, 0.5);
+    --cyan: #00f0ff;
+    --pink: #ff2d95;
+    --purple: #7c3aed;
+    --green: #00ff88;
+    --orange: #ff6b35;
+    --glow-cyan: rgba(0, 240, 255, 0.2);
+    --glow-pink: rgba(255, 45, 149, 0.15);
+  }
+
+  body {
+    font-family: 'Space Grotesk', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 30%, rgba(0, 240, 255, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(255, 45, 149, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.04) 0%, transparent 40%);
+  }
+
+  /* Grid overlay */
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .app { display: flex; position: relative; z-index: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px; height: 100vh; position: sticky; top: 0;
+    background: rgba(10, 11, 30, 0.9);
+    border-right: 1px solid var(--border);
+    padding: 24px 12px;
+    backdrop-filter: blur(20px);
+    flex-shrink: 0;
+    display: flex; flex-direction: column;
+  }
+  .logo {
+    font-size: 20px; font-weight: 700; letter-spacing: 1px;
+    padding: 0 12px 32px;
+    display: flex; align-items: center; gap: 10px;
+    text-transform: uppercase;
+  }
+  .logo .cyber { color: var(--cyan); text-shadow: 0 0 12px var(--glow-cyan); }
+  .logo svg { width: 26px; height: 26px; }
+  .logo svg rect { fill: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
+
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; padding: 20px 12px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; color: var(--text-dim); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    letter-spacing: 0.3px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: rgba(0, 240, 255, 0.05); color: var(--text); border-color: rgba(0, 240, 255, 0.1); }
+  .nav-item.active { background: rgba(0, 240, 255, 0.08); color: var(--cyan); border-color: var(--border); box-shadow: 0 0 20px rgba(0, 240, 255, 0.05); }
+  .nav-item svg { width: 16px; height: 16px; opacity: 0.6; flex-shrink: 0; stroke: currentColor; }
+  .nav-item.active svg { opacity: 1; filter: drop-shadow(0 0 4px var(--cyan)); }
+  .nav-item .badge { margin-left: auto; background: var(--pink); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; box-shadow: 0 0 10px rgba(255, 45, 149, 0.3); }
+
+  .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
+  .provider-mini { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+  .provider-mini span { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .pdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .pdot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .pdot.yellow { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+
+  /* ── Main ── */
+  .main { flex: 1; padding: 28px 32px; max-width: 1440px; }
+
+  /* ── Header ── */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .header-left h1 { font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-left h1 .glitch { color: var(--cyan); text-shadow: 0 0 20px var(--glow-cyan); }
+  .header-left p { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .hpill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: rgba(0,240,255,0.04); color: var(--text-dim); }
+  .hpill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .hpill .dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .hpill .dot.yellow { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+  .scanline { font-size: 12px; color: var(--text-dim); padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(0,240,255,0.04); letter-spacing: 0.5px; }
+
+  /* ── KPI ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.5;
+  }
+  .kpi-card:hover { border-color: rgba(0, 240, 255, 0.3); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 30px var(--glow-cyan); }
+  .kpi-card .icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 12px; background: rgba(0,240,255,0.05); }
+  .kpi-card .icon.pink { border-color: rgba(255,45,149,0.3); color: var(--pink); }
+  .kpi-card .icon.cyan { border-color: rgba(0,240,255,0.3); color: var(--cyan); }
+  .kpi-card .icon.green { border-color: rgba(0,255,136,0.3); color: var(--green); }
+  .kpi-card .icon.orange { border-color: rgba(255,107,53,0.3); color: var(--orange); }
+  .kpi-label { font-size: 12px; color: var(--text-dim); letter-spacing: 0.5px; }
+  .kpi-value { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi-value .currency { font-size: 18px; color: var(--text-dim); }
+  .kpi-footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; }
+  .kpi-footer .ch { font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+  .kpi-footer .ch.up { color: var(--pink); background: rgba(255,45,149,0.1); }
+  .kpi-footer .ch.down { color: var(--green); background: rgba(0,255,136,0.1); }
+  .kpi-footer .sub { color: var(--text-dim); }
+
+  /* ── Charts ── */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    backdrop-filter: blur(10px);
+    position: relative; overflow: hidden;
+  }
+  .chart-card::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+  .ch-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .ch-head h3 { font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+  .ch-head h3 .accent { color: var(--cyan); }
+  .ch-head select { background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer; }
+
+  /* Cyber bar chart */
+  .bar-chart { display: flex; align-items: flex-end; height: 180px; gap: 6px; padding: 8px 0; }
+  .bar-g { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar-s { width: 100%; display: flex; gap: 2px; align-items: flex-end; height: 100%; }
+  .bar { flex: 1; border-radius: 3px 3px 0 0; transition: height 0.5s; cursor: pointer; position: relative; min-height: 2px; }
+  .bar:hover { filter: brightness(1.3); }
+  .bar-tip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #000; color: var(--cyan); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; border: 1px solid var(--border); }
+  .bar:hover .bar-tip { opacity: 1; }
+  .bar-lbl { font-size: 10px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.5px; }
+  .ch-legend { display: flex; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--text-dim); }
+  .ch-legend span { display: flex; align-items: center; gap: 6px; }
+
+  /* Donut cyber */
+  .donut-w { display: flex; align-items: center; justify-content: center; gap: 20px; height: 180px; }
+  .donut-r { position: relative; width: 130px; height: 130px; }
+  .donut-r svg { transform: rotate(-90deg); width: 100%; height: 100%; filter: drop-shadow(0 0 6px var(--glow-cyan)); }
+  .donut-r circle { fill: none; stroke-width: 22; cx: 65; cy: 65; r: 54; }
+  .donut-c { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+  .donut-c .val { font-size: 18px; font-weight: 700; color: var(--cyan); }
+  .donut-c .lbl { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+  .dl { display: flex; flex-direction: column; gap: 6px; }
+  .dl-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+  .dl-item:hover { background: rgba(0,240,255,0.05); }
+  .dl-item .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .dl-item .lbl { color: var(--text-dim); }
+  .dl-item .val { margin-left: auto; font-weight: 600; }
+
+  /* ── Bottom ── */
+  .bottom-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; }
+  .t-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    backdrop-filter: blur(10px);
+  }
+  .t-card .ch { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .t-card .ch h3 { font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+  .t-card .ch a { font-size: 12px; color: var(--cyan); cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 10px; color: var(--text-dim); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px; border-bottom: 1px solid rgba(0,240,255,0.04); }
+  tr { transition: background 0.15s; cursor: pointer; }
+  tr:hover td { background: rgba(0,240,255,0.03); }
+  .ptag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+  .ptag.aws { background: rgba(255,107,53,0.15); color: var(--orange); border: 1px solid rgba(255,107,53,0.2); }
+  .ptag.azure { background: rgba(0,240,255,0.1); color: var(--cyan); border: 1px solid rgba(0,240,255,0.15); }
+  .ptag.gcp { background: rgba(124,58,237,0.15); color: var(--purple); border: 1px solid rgba(124,58,237,0.2); }
+  .cost { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Alerts */
+  .alerts-list { display: flex; flex-direction: column; gap: 6px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); transition: all 0.2s; cursor: pointer; }
+  .alert-item:hover { border-color: rgba(0,240,255,0.2); background: rgba(0,240,255,0.03); }
+  .alert-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .alert-item.crit .alert-icon { background: rgba(255,45,149,0.15); color: var(--pink); }
+  .alert-item.warn .alert-icon { background: rgba(255,107,53,0.15); color: var(--orange); }
+  .alert-item.info .alert-icon { background: rgba(0,240,255,0.1); color: var(--cyan); }
+  .alert-text .t { font-size: 12px; font-weight: 600; }
+  .alert-text .d { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .alert-time { font-size: 10px; color: var(--text-dim); flex-shrink: 0; margin-top: 2px; }
+
+  @media (max-width: 1000px) {
+    .sidebar { display: none; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .bottom-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 26 26"><rect x="2" y="2" width="22" height="22" rx="5" fill="none" stroke="#00f0ff" stroke-width="2"/><path d="M13 7l5 3.5v7L13 21l-5-3.5v-7L13 7z" fill="#00f0ff" opacity="0.6"/></svg>
+      <span class="cyber">CLOUD</span>OPS
+    </div>
+    <div class="nav-label">System</div>
+    <a class="nav-item active" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Analytics</a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Resources</a>
+    <div class="nav-label">Control</div>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts <span class="badge">3</span></a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    <div class="sidebar-footer">
+      <div class="provider-mini">
+        <span><span class="pdot green"></span> AWS — Online</span>
+        <span><span class="pdot green"></span> Azure — Online</span>
+        <span><span class="pdot yellow"></span> GCP — Degraded</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-left">
+        <h1>SYSTEM <span class="glitch">STATUS</span></h1>
+        <p>Real-time infrastructure monitoring // <span id="clock" style="color:var(--cyan);"></span></p>
+      </div>
+      <div class="header-right">
+        <div class="hpill"><span class="dot green"></span>AWS</div>
+        <div class="hpill"><span class="dot green"></span>Azure</div>
+        <div class="hpill"><span class="dot yellow"></span>GCP</div>
+        <div class="scanline">ACTIVE</div>
+      </div>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="icon cyan">$</div><div class="kpi-label">MONTHLY COST</div><div class="kpi-value"><span class="currency">$</span><span class="counter" data-target="12847">0</span></div><div class="kpi-footer"><span class="ch up">+8.3%</span><span class="sub">vs last month</span></div></div>
+      <div class="kpi-card"><div class="icon green">#</div><div class="kpi-label">ACTIVE RESOURCES</div><div class="kpi-value"><span class="counter" data-target="247">0</span></div><div class="kpi-footer"><span class="ch down">-3%</span><span class="sub">vs last month</span></div></div>
+      <div class="kpi-card"><div class="icon pink">%</div><div class="kpi-label">UTILIZATION</div><div class="kpi-value"><span class="counter" data-target="67">0</span><span class="currency">%</span></div><div class="kpi-footer"><span class="ch down">+2%</span><span class="sub">vs last month</span></div></div>
+      <div class="kpi-card"><div class="icon orange">&#9741;</div><div class="kpi-label">BUDGET REMAINING</div><div class="kpi-value"><span class="currency">$</span><span class="counter" data-target="3153">0</span></div><div class="kpi-footer"><span class="ch" style="color:var(--green);">19.7% left</span></div></div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="ch-head"><h3>DAILY <span class="accent">COST</span> TREND</h3><select><option>7 DAYS</option></select></div>
+        <div class="bar-chart" id="barChart"></div>
+        <div class="ch-legend"><span><span class="leg-dot" style="background:#00f0ff;box-shadow:0 0 6px #00f0ff"></span>AWS</span><span><span class="leg-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff88"></span>Azure</span><span><span class="leg-dot" style="background:#7c3aed;box-shadow:0 0 6px #7c3aed"></span>GCP</span></div>
+      </div>
+      <div class="chart-card">
+        <div class="ch-head"><h3>COST BY <span class="accent">PROVIDER</span></h3></div>
+        <div class="donut-w">
+          <div class="donut-r">
+            <svg viewBox="0 0 130 130">
+              <circle id="dAws" r="54" cx="65" cy="65" stroke="#00f0ff" stroke-dasharray="0 339" stroke-linecap="round"/>
+              <circle id="dAzure" r="54" cx="65" cy="65" stroke="#00ff88" stroke-dasharray="0 339" stroke-linecap="round"/>
+              <circle id="dGcp" r="54" cx="65" cy="65" stroke="#7c3aed" stroke-dasharray="0 339" stroke-linecap="round"/>
+            </svg>
+            <div class="donut-c"><div class="val" id="donutTotal">$12.8K</div><div class="lbl">TOTAL COST</div></div>
+          </div>
+          <div class="dl">
+            <div class="dl-item"><span class="dot" style="color:#00f0ff;background:#00f0ff"></span><span class="lbl">AWS</span><span class="val">$5,230</span></div>
+            <div class="dl-item"><span class="dot" style="color:#00ff88;background:#00ff88"></span><span class="lbl">Azure</span><span class="val">$4,210</span></div>
+            <div class="dl-item"><span class="dot" style="color:#7c3aed;background:#7c3aed"></span><span class="lbl">GCP</span><span class="val">$3,407</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="t-card">
+        <div class="ch"><h3>TOP COST RESOURCES</h3><a onclick="alert('Full list')">VIEW ALL &rarr;</a></div>
+        <table>
+          <thead><tr><th>Resource</th><th>Provider</th><th>Type</th><th>Env</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr onclick="alert('prod-web-cluster')"><td>prod-web-cluster</td><td><span class="ptag aws">AWS</span></td><td>EC2</td><td>Production</td><td class="cost">$1,240</td></tr>
+            <tr onclick="alert('prod-db-primary')"><td>prod-db-primary</td><td><span class="ptag azure">Azure</span></td><td>SQL DB</td><td>Production</td><td class="cost">$980</td></tr>
+            <tr onclick="alert('data-pipeline-vm')"><td>data-pipeline-vm</td><td><span class="ptag gcp">GCP</span></td><td>Compute</td><td>Dev</td><td class="cost">$720</td></tr>
+            <tr onclick="alert('staging-api')"><td>staging-api-servers</td><td><span class="ptag aws">AWS</span></td><td>ECS</td><td>Staging</td><td class="cost">$540</td></tr>
+            <tr onclick="alert('dev-build-agents')"><td>dev-build-agents</td><td><span class="ptag azure">Azure</span></td><td>VM</td><td>Dev</td><td class="cost">$410</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="t-card">
+        <div class="ch"><h3>ACTIVE ALERTS</h3><span style="background:rgba(255,45,149,0.15);color:var(--pink);font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;border:1px solid rgba(255,45,149,0.2);">3 ACTIVE</span></div>
+        <div class="alerts-list">
+          <div class="alert-item crit" onclick="this.style.opacity='0.4'"><div class="alert-icon">!</div><div class="alert-text"><div class="t">AWS Cost Threshold Breached</div><div class="d">prod-web-cluster exceeded $1,000 budget</div></div><div class="alert-time">10m</div></div>
+          <div class="alert-item warn" onclick="this.style.opacity='0.4'"><div class="alert-icon">!</div><div class="alert-text"><div class="t">Azure SQL Underutilized</div><div class="d">23% usage for 7 days — action recommended</div></div><div class="alert-time">1h</div></div>
+          <div class="alert-item info" onclick="this.style.opacity='0.4'"><div class="alert-icon">i</div><div class="alert-text"><div class="t">GCP Quota Warning</div><div class="d">CPU quota at 85% in us-central1</div></div><div class="alert-time">3h</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Clock
+  function tick() { const n = new Date(); document.getElementById('clock').textContent = n.toLocaleTimeString('en-US', {hour12:false}) + ':' + n.getMilliseconds().toString().padStart(3,'0').slice(0,1); }
+  tick(); setInterval(tick, 100);
+
+  function setActive(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+  document.querySelectorAll('.counter').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const dur = 1000; const start = performance.now();
+    function step(now) { const p = Math.min((now-start)/dur,1); const e = 1-Math.pow(1-p,3); el.textContent = Math.floor(e*target).toLocaleString(); if (p<1) requestAnimationFrame(step); else el.textContent = target.toLocaleString(); }
+    requestAnimationFrame(step);
+  });
+
+  const days = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const data = [{aws:180,azure:140,gcp:92},{aws:230,azure:180,gcp:113},{aws:150,azure:130,gcp:100},{aws:260,azure:190,gcp:108},{aws:210,azure:170,gcp:109},{aws:190,azure:160,gcp:101},{aws:290,azure:210,gcp:132}];
+  const max = Math.max(...data.flatMap(d=>[d.aws,d.azure,d.gcp]));
+  const bc = document.getElementById('barChart');
+  data.forEach((d,i) => {
+    const g = document.createElement('div'); g.className = 'bar-g';
+    const s = document.createElement('div'); s.className = 'bar-s';
+    s.innerHTML = `<div class="bar" style="height:${(d.aws/max)*155}px;background:#00f0ff;box-shadow:0 0 8px rgba(0,240,255,0.3)"><div class="bar-tip">AWS: $${d.aws}</div></div><div class="bar" style="height:${(d.azure/max)*155}px;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,0.3)"><div class="bar-tip">Azure: $${d.azure}</div></div><div class="bar" style="height:${(d.gcp/max)*155}px;background:#7c3aed;box-shadow:0 0 8px rgba(124,58,237,0.3)"><div class="bar-tip">GCP: $${d.gcp}</div></div>`;
+    const l = document.createElement('div'); l.className = 'bar-lbl'; l.textContent = days[i];
+    g.appendChild(s); g.appendChild(l); bc.appendChild(g);
+  });
+
+  const circ = 2 * Math.PI * 54;
+  let drawn = 0;
+  [{id:'dAws',p:41},{id:'dAzure',p:33},{id:'dGcp',p:26}].forEach((s,i) => {
+    const c = document.getElementById(s.id);
+    const off = (drawn/100)*circ; const len = (s.p/100)*circ;
+    setTimeout(() => { c.style.transition = 'stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1)'; c.style.strokeDasharray = `${len} ${circ-len}`; c.style.strokeDashoffset = `-${off}`; }, i*200);
+    drawn += s.p;
+  });
+</script>
+</body>
+</html>
