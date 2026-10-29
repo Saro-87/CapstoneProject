@@ -1,0 +1,23 @@
+# Credentials — NEVER commit these
+.env
+config/gcp-service-account.json
+
+# Raw data dumps
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

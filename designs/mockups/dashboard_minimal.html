@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudOps | Minimal Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app { display: flex; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px; height: 100vh; position: sticky; top: 0;
+    background: white;
+    border-right: 1px solid #eef0f6;
+    padding: 24px 16px;
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+  }
+  .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; padding: 0 12px 32px; display: flex; align-items: center; gap: 10px; }
+  .logo .accent { color: #6366f1; }
+  .logo svg { width: 28px; height: 28px; }
+
+  .nav-label { font-size: 11px; font-weight: 600; color: #a0a8c0; text-transform: uppercase; letter-spacing: 0.8px; padding: 20px 12px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 10px; color: #6b7280; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .nav-item:hover { background: #f1f3f9; color: #1a1a2e; }
+  .nav-item.active { background: #6366f1; color: white; }
+  .nav-item svg { width: 18px; height: 18px; opacity: 0.5; flex-shrink: 0; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item .badge { margin-left: auto; background: #fee2e2; color: #ef4444; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 10px; }
+
+  .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid #eef0f6; }
+  .sidebar-footer .user { display: flex; align-items: center; gap: 10px; }
+  .sidebar-footer .avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; }
+  .sidebar-footer .name { font-size: 13px; font-weight: 600; }
+  .sidebar-footer .role { font-size: 11px; color: #a0a8c0; }
+
+  /* ── Main ── */
+  .main { flex: 1; padding: 32px 40px; max-width: 1440px; }
+  @media (max-width: 1200px) { .main { padding: 24px; } }
+
+  /* ── Header ── */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  .header-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-left p { color: #6b7280; font-size: 14px; margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-pill { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; background: #f1f3f9; color: #374151; }
+  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot.green { background: #22c55e; }
+  .dot.yellow { background: #f59e0b; }
+  .header-right .avatar-lg { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; cursor: pointer; }
+
+  /* ── KPI Row ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .kpi-card {
+    background: white; border-radius: 16px; padding: 24px;
+    border: 1px solid #eef0f6;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: default;
+  }
+  .kpi-card:hover { box-shadow: 0 8px 30px rgba(99,102,241,0.08); transform: translateY(-2px); border-color: #dde0ed; }
+  .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .kpi-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .kpi-icon.blue { background: #eef2ff; color: #6366f1; }
+  .kpi-icon.green { background: #ecfdf5; color: #22c55e; }
+  .kpi-icon.purple { background: #faf5ff; color: #a855f7; }
+  .kpi-icon.orange { background: #fff7ed; color: #f97316; }
+  .kpi-label { font-size: 13px; color: #6b7280; font-weight: 500; margin-top: 16px; }
+  .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-top: 4px; }
+  .kpi-footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; }
+  .kpi-footer .change { font-weight: 600; padding: 1px 8px; border-radius: 6px; }
+  .change.up { background: #fef2f2; color: #ef4444; }
+  .change.down { background: #ecfdf5; color: #22c55e; }
+  .kpi-footer .sub { color: #9ca3af; }
+
+  /* ── Charts ── */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .chart-card {
+    background: white; border-radius: 16px; padding: 24px;
+    border: 1px solid #eef0f6;
+    transition: box-shadow 0.2s;
+  }
+  .chart-card:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.04); }
+  .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .chart-head h3 { font-size: 16px; font-weight: 600; }
+  .chart-head select { background: #f1f3f9; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-family: inherit; color: #374151; cursor: pointer; }
+
+  /* Bar chart */
+  .bar-chart { display: flex; align-items: flex-end; height: 200px; gap: 6px; padding-top: 8px; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bar-stack { width: 100%; display: flex; gap: 3px; align-items: flex-end; height: 100%; }
+  .bar { flex: 1; border-radius: 4px 4px 0 0; transition: height 0.5s cubic-bezier(0.16,1,0.3,1); cursor: pointer; position: relative; min-height: 2px; }
+  .bar:hover { opacity: 0.8; }
+  .bar-tip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1a1a2e; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .bar:hover .bar-tip { opacity: 1; }
+  .bar-label { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+  .chart-legend { display: flex; gap: 16px; margin-top: 16px; font-size: 12px; color: #6b7280; }
+  .chart-legend span { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; justify-content: center; gap: 24px; height: 200px; }
+  .donut-ring { position: relative; width: 140px; height: 140px; }
+  .donut-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .donut-ring circle { fill: none; stroke-width: 24; cx: 70; cy: 70; r: 58; }
+  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+  .donut-center .val { font-size: 20px; font-weight: 700; }
+  .donut-center .lbl { font-size: 11px; color: #9ca3af; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .dl-item { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; cursor: pointer; }
+  .dl-item:hover { background: #f1f3f9; }
+  .dl-item .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .dl-item .lbl { color: #6b7280; }
+  .dl-item .val { margin-left: auto; font-weight: 600; }
+
+  /* ── Bottom ── */
+  .bottom-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+  .table-card {
+    background: white; border-radius: 16px; padding: 24px;
+    border: 1px solid #eef0f6;
+  }
+  .table-card .ch { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .table-card .ch h3 { font-size: 16px; font-weight: 600; }
+  .table-card .ch a { font-size: 13px; color: #6366f1; cursor: pointer; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: #9ca3af; font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #eef0f6; }
+  td { padding: 12px; border-bottom: 1px solid #f8f9fc; }
+  tr { transition: background 0.15s; cursor: pointer; }
+  tr:hover td { background: #f8f9fc; }
+  .ptag { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .ptag.aws { background: #fff7ed; color: #f97316; }
+  .ptag.azure { background: #eef2ff; color: #6366f1; }
+  .ptag.gcp { background: #faf5ff; color: #a855f7; }
+  .cost { font-weight: 600; }
+
+  /* Alerts */
+  .alerts-list { display: flex; flex-direction: column; gap: 8px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 12px; background: #f8f9fc; border: 1px solid #eef0f6; transition: all 0.2s; cursor: pointer; }
+  .alert-item:hover { background: #f1f3f9; border-color: #dde0ed; }
+  .alert-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .alert-item.crit .alert-icon { background: #fef2f2; color: #ef4444; }
+  .alert-item.warn .alert-icon { background: #fff7ed; color: #f97316; }
+  .alert-item.info .alert-icon { background: #eef2ff; color: #6366f1; }
+  .alert-text .t { font-size: 13px; font-weight: 600; }
+  .alert-text .d { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .alert-time { font-size: 11px; color: #9ca3af; flex-shrink: 0; margin-top: 2px; }
+
+  @media (max-width: 1000px) {
+    .sidebar { display: none; }
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 28 28"><rect x="2" y="2" width="24" height="24" rx="6" fill="#6366f1"/><path d="M14 8l6 4v8l-6 4-6-4v-8l6-4z" fill="white" opacity="0.9"/></svg>
+      Cloud<span class="accent">Ops</span>
+    </div>
+    <div class="nav-label">Overview</div>
+    <a class="nav-item active" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Analytics</a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Resources</a>
+    <div class="nav-label">Management</div>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts <span class="badge">3</span></a>
+    <a class="nav-item" onclick="setActive(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+
+    <div class="sidebar-footer">
+      <div class="user">
+        <div class="avatar">JD</div>
+        <div><div class="name">John Doe</div><div class="role">DevOps Lead</div></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-left">
+        <h1>Good morning, John</h1>
+        <p>Here's what's happening across your cloud infrastructure today.</p>
+      </div>
+      <div class="header-right">
+        <div class="status-pill"><span class="dot green"></span>AWS</div>
+        <div class="status-pill"><span class="dot green"></span>Azure</div>
+        <div class="status-pill"><span class="dot yellow"></span>GCP</div>
+        <div class="avatar-lg" onclick="alert('Profile menu')">JD</div>
+      </div>
+    </header>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon blue">$</div></div>
+        <div class="kpi-label">Total Monthly Cost</div>
+        <div class="kpi-value">$<span class="counter" data-target="12847">0</span></div>
+        <div class="kpi-footer"><span class="change up">&#8593; 8.3%</span><span class="sub">vs last month</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon green">&#9776;</div></div>
+        <div class="kpi-label">Active Resources</div>
+        <div class="kpi-value"><span class="counter" data-target="247">0</span></div>
+        <div class="kpi-footer"><span class="change down">&#8595; 3%</span><span class="sub">vs last month</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon purple">%</div></div>
+        <div class="kpi-label">Avg. Utilization</div>
+        <div class="kpi-value"><span class="counter" data-target="67">0</span>%</div>
+        <div class="kpi-footer"><span class="change down">&#8593; 2%</span><span class="sub">vs last month</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon orange">&#9741;</div></div>
+        <div class="kpi-label">Monthly Budget Left</div>
+        <div class="kpi-value">$<span class="counter" data-target="3153">0</span></div>
+        <div class="kpi-footer"><span class="change" style="color:#22c55e;font-weight:600;">19.7% remaining</span></div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-head"><h3>Daily Cost Trend</h3><select><option>Last 7 days</option><option>Last 30 days</option></select></div>
+        <div class="bar-chart" id="barChart"></div>
+        <div class="chart-legend"><span><span class="leg-dot" style="background:#6366f1"></span>AWS</span><span><span class="leg-dot" style="background:#22c55e"></span>Azure</span><span><span class="leg-dot" style="background:#a855f7"></span>GCP</span></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><h3>Cost by Provider</h3></div>
+        <div class="donut-wrap">
+          <div class="donut-ring">
+            <svg viewBox="0 0 140 140">
+              <circle id="dAws" r="58" cx="70" cy="70" stroke="#6366f1" stroke-dasharray="0 364" stroke-linecap="round"/>
+              <circle id="dAzure" r="58" cx="70" cy="70" stroke="#22c55e" stroke-dasharray="0 364" stroke-linecap="round"/>
+              <circle id="dGcp" r="58" cx="70" cy="70" stroke="#a855f7" stroke-dasharray="0 364" stroke-linecap="round"/>
+            </svg>
+            <div class="donut-center"><div class="val" id="donutTotal">$12.8K</div><div class="lbl">Total</div></div>
+          </div>
+          <div class="donut-legend">
+            <div class="dl-item"><span class="dot" style="background:#6366f1"></span><span class="lbl">AWS</span><span class="val">$5,230</span></div>
+            <div class="dl-item"><span class="dot" style="background:#22c55e"></span><span class="lbl">Azure</span><span class="val">$4,210</span></div>
+            <div class="dl-item"><span class="dot" style="background:#a855f7"></span><span class="lbl">GCP</span><span class="val">$3,407</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="bottom-grid">
+      <div class="table-card">
+        <div class="ch"><h3>Top Cost Resources</h3><a onclick="alert('Full list')">View all &rarr;</a></div>
+        <table>
+          <thead><tr><th>Resource</th><th>Provider</th><th>Type</th><th>Env</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr onclick="alert('prod-web-cluster')"><td>prod-web-cluster</td><td><span class="ptag aws">AWS</span></td><td>EC2</td><td>Production</td><td class="cost">$1,240</td></tr>
+            <tr onclick="alert('prod-db-primary')"><td>prod-db-primary</td><td><span class="ptag azure">Azure</span></td><td>SQL DB</td><td>Production</td><td class="cost">$980</td></tr>
+            <tr onclick="alert('data-pipeline-vm')"><td>data-pipeline-vm</td><td><span class="ptag gcp">GCP</span></td><td>Compute</td><td>Dev</td><td class="cost">$720</td></tr>
+            <tr onclick="alert('staging-api')"><td>staging-api-servers</td><td><span class="ptag aws">AWS</span></td><td>ECS</td><td>Staging</td><td class="cost">$540</td></tr>
+            <tr onclick="alert('dev-build-agents')"><td>dev-build-agents</td><td><span class="ptag azure">Azure</span></td><td>VM</td><td>Dev</td><td class="cost">$410</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="ch"><h3>Recent Alerts</h3><span style="background:#fee2e2;color:#ef4444;font-size:12px;font-weight:600;padding:2px 10px;border-radius:10px;">3 Active</span></div>
+        <div class="alerts-list">
+          <div class="alert-item crit" onclick="this.style.opacity='0.4'"><div class="alert-icon">!</div><div class="alert-text"><div class="t">AWS Cluster Cost Exceeded</div><div class="d">prod-web-cluster exceeded $1,000 monthly budget</div></div><div class="alert-time">10m</div></div>
+          <div class="alert-item warn" onclick="this.style.opacity='0.4'"><div class="alert-icon">!</div><div class="alert-text"><div class="t">Azure SQL Underutilized</div><div class="d">Running at 23% usage for 7 days</div></div><div class="alert-time">1h</div></div>
+          <div class="alert-item info" onclick="this.style.opacity='0.4'"><div class="alert-icon">i</div><div class="alert-text"><div class="t">GCP Quota Approaching Limit</div><div class="d">85% of CPU quota used in us-central1</div></div><div class="alert-time">3h</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setActive(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+  // Counters
+  document.querySelectorAll('.counter').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const dur = 1000;
+    const start = performance.now();
+    function step(now) {
+      const p = Math.min((now - start) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.floor(e * target).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(step);
+  });
+
+  // Bar chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const data = [
+    { aws:180, azure:140, gcp:92 }, { aws:230, azure:180, gcp:113 },
+    { aws:150, azure:130, gcp:100 }, { aws:260, azure:190, gcp:108 },
+    { aws:210, azure:170, gcp:109 }, { aws:190, azure:160, gcp:101 },
+    { aws:290, azure:210, gcp:132 }
+  ];
+  const max = Math.max(...data.flatMap(d => [d.aws,d.azure,d.gcp]));
+  const bc = document.getElementById('barChart');
+  data.forEach((d,i) => {
+    const g = document.createElement('div'); g.className = 'bar-group';
+    const s = document.createElement('div'); s.className = 'bar-stack';
+    s.innerHTML = `<div class="bar" style="height:${(d.aws/max)*170}px;background:#6366f1"><div class="bar-tip">AWS: $${d.aws}</div></div><div class="bar" style="height:${(d.azure/max)*170}px;background:#22c55e"><div class="bar-tip">Azure: $${d.azure}</div></div><div class="bar" style="height:${(d.gcp/max)*170}px;background:#a855f7"><div class="bar-tip">GCP: $${d.gcp}</div></div>`;
+    const l = document.createElement('div'); l.className = 'bar-label'; l.textContent = days[i];
+    g.appendChild(s); g.appendChild(l); bc.appendChild(g);
+  });
+
+  // Donut
+  const circ = 2 * Math.PI * 58;
+  let drawn = 0;
+  [{id:'dAws',p:41},{id:'dAzure',p:33},{id:'dGcp',p:26}].forEach((s,i) => {
+    const c = document.getElementById(s.id);
+    const off = (drawn/100)*circ; const len = (s.p/100)*circ;
+    setTimeout(() => { c.style.transition = 'stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1)'; c.style.strokeDasharray = `${len} ${circ-len}`; c.style.strokeDashoffset = `-${off}`; }, i*200);
+    drawn += s.p;
+  });
+</script>
+</body>
+</html>
