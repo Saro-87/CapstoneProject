@@ -1,12 +1,19 @@
 """Fetch and persist real provider cost rows into cloud_costs."""
 from datetime import date, datetime
 from importlib import import_module
+from pathlib import Path
+import sys
 from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import text
 
 from app.database import engine
+
+# Connectors currently live in the repository-root connectors/ directory.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 PROVIDERS = {"aws": "connectors.aws", "azure": "connectors.azure", "gcp": "connectors.gcp"}
 
