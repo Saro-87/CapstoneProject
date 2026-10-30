@@ -51,7 +51,7 @@ export async function loadDashboard(start, end, fetcher = fetch, signal) {
     }
     if (!Array.isArray(data)) throw new Error('Unexpected response');
     if (data.some(row => !row || fields[key].some(field=>typeof row[field] !== 'string') ||
-        (amounts[key] && (row[amounts[key]] == null || !Number.isFinite(Number(row[amounts[key]])))) ||
+        (amounts[key] && !(key === 'resources' && row[amounts[key]] == null) && (row[amounts[key]] == null || !Number.isFinite(Number(row[amounts[key]])))) ||
         (['alerts','recommendations'].includes(key) && row.id == null))) throw new Error('Invalid backend record');
     return data;
   }));
