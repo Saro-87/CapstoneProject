@@ -45,9 +45,12 @@ def sync_provider(provider: str, start_date: date, end_date: date) -> dict:
 
     try:
         connector = import_module(PROVIDERS[key])
+        # AWS Cost Explorer and BigQuery use an exclusive end boundary.
+        # Azure Cost Management uses the supplied custom-period end date.
+        connector_end = end_date if key == "azure" else date.fromordinal(end_date.toordinal() + 1)
         result = connector.fetch_cost_and_usage(
             start_date=start_date.isoformat(),
-            end_date=(end_date.fromordinal(end_date.toordinal() + 1)).isoformat(),
+            end_date=connector_end.isoformat(),
         )
     except Exception as exc:
         raise HTTPException(
