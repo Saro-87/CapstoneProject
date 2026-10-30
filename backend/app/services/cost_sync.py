@@ -59,7 +59,7 @@ def sync_provider(provider: str, start_date: date, end_date: date) -> dict:
     if any(row.get("cost_usd") is None for row in source_rows):
         raise HTTPException(
             status_code=501,
-            detail="GCP cost ingestion requires a configured Cloud Billing BigQuery export; no costs were written.",
+            detail="The provider returned incomplete cost rows; no database records were changed.",
         )
 
     validated = []
