@@ -56,7 +56,7 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
           COALESCE(service.description, 'Unknown') AS service_name,
           COALESCE(location.region, 'Unknown') AS region_name,
           currency,
-          SUM(cost) AS total_cost
+          SUM(cost + COALESCE((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS total_cost
         FROM {table}
         WHERE DATE(usage_start_time) >= @start_date
           AND DATE(usage_start_time) < @end_date
