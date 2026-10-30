@@ -15,6 +15,7 @@ from app.routers import aws_optimizer
 from app.routers import aws_cloudwatch
 from app.routers import aws_anomaly
 from app.routers import reports
+from app.routers import cost_sync
 
 
 
@@ -59,4 +60,5 @@ app.include_router(aws_resources.router)
 app.include_router(aws_optimizer.router)
 app.include_router(aws_anomaly.router)
 app.include_router(reports.router)
+app.include_router(cost_sync.router)
 
