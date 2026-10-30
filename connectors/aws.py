@@ -37,7 +37,7 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
         request = {
             "TimePeriod": {"Start": start_date, "End": end_date},
             "Granularity": "DAILY",
-            "Metrics": ["BlendedCost", "UsageQuantity"],
+            "Metrics": ["BlendedCost"],
             "GroupBy": [
                 {"Type": "DIMENSION", "Key": "SERVICE"},
                 {"Type": "DIMENSION", "Key": "REGION"},
@@ -52,14 +52,13 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
             for group in period.get("Groups", []):
                 metrics = group.get("Metrics", {})
                 cost_metric = metrics.get("BlendedCost", {})
-                usage_metric = metrics.get("UsageQuantity", {})
                 rows.append({
                     "provider": "AWS",
                     "date": period_start,
                     "service": group.get("Keys", ["Unknown", "Unknown"])[0],
                     "region": group.get("Keys", ["Unknown", "Unknown"])[1],
                     "cost_usd": float(cost_metric.get("Amount", 0)),
-                    "usage_quantity": float(usage_metric.get("Amount", 0)),
+                    "usage_quantity": None,
                     "currency": cost_metric.get("Unit", ""),
                 })
 
