@@ -28,6 +28,9 @@ export default function Midnight() {
   const [reload,setReload] = useState(0);
   const [data,setData] = useState(null);
   const [loading,setLoading] = useState(true);
+  const [syncing,setSyncing] = useState(false);
+  const [syncMessage,setSyncMessage] = useState('');
+  const [syncError,setSyncError] = useState(false);
   const [query,setQuery] = useState('');
   const [status,setStatus] = useState('All');
   const [budget,setBudget] = useState('');
@@ -69,6 +72,30 @@ export default function Midnight() {
   const validBudget = budget!=='' && Number.isFinite(budgetAmount) && budgetAmount>0 && budgetAmount<=1e9;
   const remaining = budgetAmount-summary.total;
 
+  async function syncCosts() {
+    setSyncing(true);
+    setSyncMessage('Syncing provider billing for the selected period…');
+    setSyncError(false);
+    try {
+      const response = await fetch(`/api/sync/all?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(localDate(today))}`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(120000)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || `HTTP ${response.status}`);
+      const entries = Object.entries(result.providers || {});
+      const succeeded = entries.filter(([,item]) => item.status === 'success').map(([name,item]) => `${name.toUpperCase()}: ${item.rows_written ?? 0} rows`);
+      const failed = entries.filter(([,item]) => item.status !== 'success').map(([name,item]) => `${name.toUpperCase()}: ${item.message || 'sync failed'}`);
+      setSyncError(failed.length > 0);
+      setSyncMessage([...succeeded, ...failed].join(' · ') || 'Sync finished with no provider results.');
+      setReload(n => n + 1);
+    } catch (error) {
+      setSyncError(true);
+      setSyncMessage(`Billing sync failed: ${error.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  }
   function exportReport() {
     const csv = costReportCsv(summary.services);
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
@@ -80,7 +107,8 @@ export default function Midnight() {
   return <>
     <aside><a className="brand" href="#overview">◈ <span>midnight<span className="brand-dot">.</span></span></a><p className="nav-label">WORKSPACE</p><nav aria-label="Section menu">{menu.map(([id,icon,label])=><a key={id} href={`#${id}`} className={active===id?'active':''} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}>{icon} &nbsp; {label}{id==='alerts'&&available('alerts')&&<b>{activeAlerts}</b>}</a>)}</nav></aside>
     <main id="overview" aria-busy={loading}>
-      <header><span>Workspace / <strong>Overview</strong></span><div className="live-header"><span className="demo">{data?.health?.source==='demo'?'DEMO · RANDOM DATA':data?.health?.source==='database'?'DATABASE DATA':'SOURCE UNVERIFIED'}</span><button onClick={()=>setReload(n=>n+1)} disabled={loading}>↻ Refresh</button></div></header>
+      <header><span>Workspace / <strong>Overview</strong></span><div className="live-header"><span className="demo">{data?.health?.source==='demo'?'DEMO · RANDOM DATA':data?.health?.source==='database'?'DATABASE DATA':'SOURCE UNVERIFIED'}</span><button onClick={syncCosts} disabled={loading||syncing}>{syncing?'↻ Syncing…':'⇅ Sync billing'}</button><button onClick={()=>setReload(n=>n+1)} disabled={loading}>↻ Refresh</button></div></header>
+      {syncMessage&&<p className={syncError?'api-error':'sync-message'} role="status">{syncMessage}</p>}
       <section className="heading"><div><div className="eyebrow">THE MULTI-CLOUD COMMAND CENTER</div><h1>Cloud operations. In focus.</h1><p>Your cloud costs, resources, and opportunities in one place.</p></div><button className="export" onClick={exportReport} disabled={!available('costs')}>↓ Export report</button></section>
       <div className="provider-health">{providers.map(p=><span key={p}><i style={{background:colors[p]}}/>{p} · {loading?'Loading':data?.costs===null?'Unavailable':data?.costs?.some(row=>providerName(row.provider)===p)?'Stored costs available':'No stored costs'}</span>)}</div>
       <p className="source-note">{data?.health?.source === 'demo' && 'Synthetic dry run: all values on this page are generated test data. '}Provider connectivity has not been checked. Costs are stored records in USD; resources, alerts and recommendations show the latest available database records.</p>
@@ -94,7 +122,7 @@ export default function Midnight() {
       <section className="bottom"><article className="panel" id="services"><div className="panel-title"><div><h3>Top services by spend</h3><p>Grouped from stored billing records</p></div><input aria-label="Search services" placeholder="Search services" value={query} onChange={e=>setQuery(e.target.value)}/></div><div className="table-wrap"><table><thead><tr><th>Service</th><th>Provider</th><th>Spend</th></tr></thead><tbody>{summary.services.filter(row=>row.service.toLowerCase().includes(query.toLowerCase())).map(row=><tr key={`${row.provider}-${row.service}`}><td>{row.service}</td><td><span className={`badge ${row.provider}`}>{row.provider}</span></td><td>{money(row.cost)}</td></tr>)}</tbody></table>{!summary.services.some(row=>row.service.toLowerCase().includes(query.toLowerCase()))&&<p className="empty-state">{loading?'Loading…':query && summary.services.length?'No services match your search.':available('costs')?'No stored costs for this period.':'Service costs unavailable.'}</p>}</div></article><article className="panel insights" id="insights"><h3>✧ Smart opportunities</h3><p>Recommendations from the backend</p>{recommendations.map(row=><div className="opportunity" key={row.id}><span className="op-icon">↘</span><div><h4>{providerName(row.provider)}</h4><p>{row.recommendation}</p><b>{money(row.estimated_savings)} <small>estimated savings</small></b></div></div>)}{!recommendations.length&&<p className="empty-state">{loading?'Loading…':available('recommendations')?'No recommendations recorded.':'Recommendations unavailable.'}</p>}</article></section>
       <section className="bottom extension-panel"><article className="panel" id="resource-list"><div className="panel-title"><div><h3>Top cost resources</h3><p>Latest stored inventory</p></div><button onClick={()=>setExpanded(!expanded)} aria-expanded={expanded}>{expanded?'Show top 5':'View all →'}</button></div><div className="table-wrap"><table><thead><tr><th>Resource</th><th>Provider</th><th>Type</th><th>Region</th><th>Status</th><th>Cost / month</th></tr></thead><tbody>{resources.slice(0,expanded?resources.length:5).map((row,i)=><tr key={`${row.provider}-${row.resource_name}-${i}`}><td><button className="resource-link" onClick={()=>{setResource(row);dialog.current.showModal();}}>{row.resource_name}</button></td><td><span className={`badge ${providerName(row.provider)}`}>{providerName(row.provider)}</span></td><td>{row.resource_type}</td><td>{row.region}</td><td>{row.status}</td><td>{money(row.monthly_cost)}</td></tr>)}</tbody></table>{!resources.length&&<p className="empty-state">{loading?'Loading…':available('resources')?'No resources match this view.':'Resource inventory unavailable.'}</p>}</div></article><article className="panel" id="alerts"><div className="panel-title"><h3>Recent alerts</h3><span className="pill">{value('alerts',`${activeAlerts} active`)}</span></div><p>Acknowledgements apply to this browser session only.</p>{alerts.filter(row=>showAcknowledged||!acknowledged.has(row.id)).map(row=><div key={row.id} className={`alert-option ${row.severity} ${acknowledged.has(row.id)?'acknowledged':''}`}><span className="severity">!</span><div><h4>{providerName(row.provider)} · {row.severity}</h4><p>{row.message}</p><small>{row.created_at?new Date(row.created_at).toLocaleString():'Time unavailable'}</small><button onClick={()=>acknowledge(row.id)}>{acknowledged.has(row.id)?'Reopen':'Acknowledge'}</button></div></div>)}{!alerts.length&&<p className="empty-state">{loading?'Loading…':available('alerts')?'No alerts recorded.':'Alerts unavailable.'}</p>}</article></section>
       <section className="panel extension-panel" id="settings"><h3>Workspace settings</h3><p>Local planning preferences; no cloud settings are changed.</p><div className="settings-grid"><label>Selected-period budget (USD)<input type="number" min="1" max="1000000000" step="0.01" placeholder="Set a planning budget" value={budget} onChange={e=>setBudget(e.target.value)}/></label><label>Resource status<select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...new Set((data?.resources||[]).map(r=>r.status).filter(Boolean))].map(s=><option key={s}>{s}</option>)}</select></label><label className="check-label"><input type="checkbox" checked={showAcknowledged} onChange={e=>setShowAcknowledged(e.target.checked)}/>Show acknowledged alerts</label></div>{budget!==''&&!validBudget&&<p role="alert">Enter a positive budget of at most $1 billion.</p>}<p>Environment and utilization filters require additional backend fields.</p></section>
-      <footer><span>◈ midnight · Multi-cloud intelligence</span><span>Database records · no automatic cloud sync</span></footer>
+      <footer><span>◈ midnight · Multi-cloud intelligence</span><span>Manual billing sync · scheduled sync via Windows Task Scheduler</span></footer>
     </main>
     <dialog ref={dialog}><form method="dialog"><button className="dialog-close" aria-label="Close resource details">×</button></form><h3>{resource?.resource_name}</h3><p>{resource?.provider} · {resource?.resource_type} · {resource?.region}</p><p>Status: {resource?.status}</p><p>Monthly cost: {money(resource?.monthly_cost||0)}</p></dialog>
   </>;
