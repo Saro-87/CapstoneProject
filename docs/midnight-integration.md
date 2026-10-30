@@ -32,7 +32,7 @@ Use `--check-only` to generate and validate the fixture without starting a serve
 
 By default, the dashboard creates an empty `backend/dashboard.db` SQLite database. It inserts no sample records. Zero records and unavailable endpoints are shown explicitly in the UI.
 
-To use the existing PostgreSQL database, set `DATABASE_URL` in the repository `.env` or environment, for example `postgresql+psycopg2://USER:PASSWORD@localhost:5432/cloud_cost_dashboard`. Install `psycopg2-binary` in the same environment. URL-encode special characters in the connection credentials. Do not commit the real value. Existing PostgreSQL tables must already exist; the dashboard does not migrate them.
+To use the existing PostgreSQL database, set `DATABASE_URL` in the repository `.env` or environment, for example `postgresql+psycopg2://USER:PASSWORD@localhost:5432/cloud_cost_dashboard`. Install `psycopg2-binary` in the same environment. URL-encode special characters in the connection credentials. Do not commit the real value. Initialize missing dashboard tables with `backend\\.venv\\Scripts\\python.exe backend\\init_db.py` from the repository root. This creates missing tables only; it does not alter existing columns or replace a versioned migration system. See `docs/postgresql-setup.md`.
 
 The existing backend table contracts are preserved:
 
@@ -41,7 +41,7 @@ The existing backend table contracts are preserved:
 - `alerts`: id, provider, severity, message, created_at.
 - `recommendations`: id, provider, recommendation, estimated_savings.
 
-`GET /api/dashboard/costs?start=YYYY-MM-DD&end=YYYY-MM-DD` uses an inclusive start and exclusive end. Costs are filtered by date and provider; inventory, alerts and recommendations use the latest stored records filtered by provider. The frontend does not invoke cloud sync automatically or import JSON files from the Sprint 1 collectors. Existing ingestion must populate these tables.
+`GET /api/dashboard/costs?start=YYYY-MM-DD&end=YYYY-MM-DD` uses an inclusive start and exclusive end. Costs are filtered by date and provider; inventory, alerts and recommendations use the latest stored records filtered by provider. The frontend provides a manual **Sync billing** action. It calls `POST /api/sync/all` for the selected period and shows each provider's result. Page load does not automatically call cloud APIs. For scheduled ingestion, use `backend/scripts/sync_cloud_costs.py` with Windows Task Scheduler; see `docs/cloud-cost-sync.md`. AWS and Azure use their billing APIs; GCP requires a configured detailed billing export in BigQuery.
 
 ## Development and verification
 
@@ -61,4 +61,4 @@ Backend tests use their own temporary fixture database, never the configured clo
 
 ## Fields the backend does not provide
 
-Utilization, environment, provider connection health and forecasts remain unavailable. The UI does not substitute sample values. The budget setting is a local planning figure for the selected period; it is not an AWS/Azure/GCP budget. Alert acknowledgements are browser-session preferences because the existing API is read-only. Neither setting persists after reload. The app binds to localhost; shared deployment and authentication are outside this integration.
+Utilization, environment, and forecasts remain unavailable. Provider billing connectivity is checked during a sync, not continuously monitored. The UI does not substitute sample values. The budget setting is a local planning figure for the selected period; it is not an AWS/Azure/GCP budget. Alert acknowledgements are browser-session preferences because the existing API is read-only. Neither setting persists after reload. The app binds to localhost. Sync endpoints do not yet require authentication; do not expose the app beyond localhost or a trusted private network until authentication and authorization are implemented.
