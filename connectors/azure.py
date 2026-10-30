@@ -65,7 +65,8 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
                 "totalCost": QueryAggregation(name="PreTaxCost", function="Sum")
             },
             grouping=[
-                QueryGrouping(type="Dimension", name="ServiceName")
+                QueryGrouping(type="Dimension", name="ServiceName"),
+                QueryGrouping(type="Dimension", name="ResourceLocation"),
             ],
         ),
     )
@@ -81,6 +82,7 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
             "provider": "Azure",
             "date": str(record.get("UsageDate", "")),
             "service": record.get("ServiceName", "Unknown"),
+            "region": record.get("ResourceLocation", "Unknown"),
             "cost_usd": float(record.get("PreTaxCost", 0)),
             "usage_quantity": None,   # Azure query above doesn't return usage qty
             "currency": record.get("Currency", "USD"),
