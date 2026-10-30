@@ -45,8 +45,8 @@ def sync_all_cloud_costs(start_date: date | None = None, end_date: date | None =
 def sync_cloud_costs(provider: str, start_date: date | None = None, end_date: date | None = None):
     """Fetch one provider date range and store validated USD billing rows.
 
-    Dates are inclusive for callers. GCP remains blocked until BigQuery billing
-    export ingestion is implemented, so it never inserts placeholder costs.
+    Dates are inclusive for callers. GCP requires a configured BigQuery billing
+    export; if that is missing, the connector returns an explicit error.
     """
     start, end = _date_window(start_date, end_date)
     return sync_provider(provider, start, end)
