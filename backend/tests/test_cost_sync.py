@@ -1,10 +1,17 @@
+import os
+import tempfile
 import unittest
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
+
+# Never use a developer-configured database in these tests.
+_TEST_DATABASE_DIRECTORY = tempfile.TemporaryDirectory()
+os.environ["DATABASE_URL"] = "sqlite:///" + str(Path(_TEST_DATABASE_DIRECTORY.name) / "tests.db")
 
 from app.services import cost_sync
 
