@@ -10,7 +10,7 @@ from sqlalchemy import Column, DateTime, Float, Integer, String, Table, text
 
 from app.database import Base, engine
 from app.models.cloud_cost import CloudCost
-from app.routers import alerts, recommendations, resources
+from app.routers import alerts, recommendations, resources, cost_sync
 
 
 # Match existing router contracts without introducing sample records.
@@ -38,6 +38,7 @@ app = FastAPI(title='Midnight Cloud Dashboard', lifespan=lifespan)
 app.include_router(resources.router, prefix='/api')
 app.include_router(alerts.router, prefix='/api')
 app.include_router(recommendations.router, prefix='/api')
+app.include_router(cost_sync.router)
 
 
 @app.get('/api/health')
