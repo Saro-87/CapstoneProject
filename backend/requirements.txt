@@ -8,3 +8,4 @@ azure-identity>=1.17,<2
 azure-mgmt-costmanagement>=4.0,<5
 google-cloud-billing>=1.13,<2
 google-cloud-bigquery>=3.25,<4
+httpx2
