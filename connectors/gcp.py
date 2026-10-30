@@ -56,8 +56,7 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
           COALESCE(service.description, 'Unknown') AS service_name,
           COALESCE(location.region, 'Unknown') AS region_name,
           currency,
-          SUM(cost) AS total_cost,
-          SUM(usage.amount) AS usage_quantity
+          SUM(cost) AS total_cost
         FROM {table}
         WHERE DATE(usage_start_time) >= @start_date
           AND DATE(usage_start_time) < @end_date
@@ -76,7 +75,7 @@ def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
         "service": row.service_name,
         "region": row.region_name,
         "cost_usd": float(row.total_cost),
-        "usage_quantity": float(row.usage_quantity or 0),
+        "usage_quantity": None,
         "currency": row.currency,
     } for row in result]
 
