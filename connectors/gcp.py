@@ -1,100 +1,112 @@
 """
-connectors/gcp.py
-Fetches cost and usage data from GCP Cloud Billing API.
-"""
+GCP billing connector.
 
+Detailed cost history is queried from the standard Cloud Billing export in
+BigQuery. The Cloud Billing API itself does not expose historical cost rows.
+"""
 import os
-import json
+import re
 from datetime import datetime, timedelta
+
 from dotenv import load_dotenv
+from google.cloud import bigquery
 from google.oauth2 import service_account
-from google.cloud import billing_v1
 
 load_dotenv()
 
 
-def get_client():
-    """Create and return an authenticated GCP Cloud Billing client."""
+def _credentials():
     key_path = os.getenv("GCP_SERVICE_ACCOUNT_JSON", "./config/gcp-service-account.json")
-    credentials = service_account.Credentials.from_service_account_file(
+    return service_account.Credentials.from_service_account_file(
         key_path,
-        scopes=["https://www.googleapis.com/auth/cloud-billing.readonly"],
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
-    return billing_v1.CloudBillingClient(credentials=credentials)
 
 
 def fetch_cost_and_usage(start_date: str = None, end_date: str = None) -> dict:
-    """
-    Fetch billing account info and project costs from GCP Cloud Billing.
+    """Read daily service costs from a configured BigQuery billing export.
 
-    Note: Detailed per-service breakdown requires BigQuery billing export.
-    This connector returns billing account summary data directly from the API.
-
-    Args:
-        start_date: 'YYYY-MM-DD' — used for metadata only at this API level
-        end_date:   'YYYY-MM-DD' — used for metadata only at this API level
-
-    Returns:
-        Standardised dict with provider, period, and billing account rows.
+    end_date follows the provider connector convention and is exclusive.
+    The export table must use the standard detailed usage cost export schema.
     """
     if not start_date:
         start_date = (datetime.today() - timedelta(days=30)).strftime("%Y-%m-%d")
     if not end_date:
         end_date = datetime.today().strftime("%Y-%m-%d")
 
-    billing_account_id = os.getenv("GCP_BILLING_ACCOUNT_ID")
-    client = get_client()
+    project_id = os.getenv("GCP_BILLING_EXPORT_PROJECT_ID") or os.getenv("GCP_PROJECT_ID")
+    dataset_id = os.getenv("GCP_BILLING_EXPORT_DATASET")
+    table_id = os.getenv("GCP_BILLING_EXPORT_TABLE")
+    if not project_id or not dataset_id or not table_id:
+        raise RuntimeError(
+            "Configure GCP_BILLING_EXPORT_PROJECT_ID, GCP_BILLING_EXPORT_DATASET, "
+            "and GCP_BILLING_EXPORT_TABLE for actual cost history."
+        )
 
-    # List projects associated with this billing account
-    request = billing_v1.ListProjectBillingInfoRequest(
-        name=f"billingAccounts/{billing_account_id}"
-    )
-    projects = list(client.list_project_billing_info(request=request))
+    # Validate identifiers before using them in SQL; identifiers cannot be query parameters.
+    identifier = re.compile(r"^[A-Za-z0-9_-]+$")
+    if not all(identifier.fullmatch(value) for value in (project_id, dataset_id, table_id)):
+        raise ValueError("GCP BigQuery project, dataset, or table identifier is invalid.")
 
-    rows = []
-    for project in projects:
-        rows.append({
-            "provider": "GCP",
-            "date": start_date,
-            "service": project.project_id,
-            "cost_usd": None,     # Detailed cost needs BigQuery export (see README)
-            "usage_quantity": None,
-            "currency": "USD",
-            "billing_enabled": project.billing_enabled,
-        })
+    client = bigquery.Client(project=project_id, credentials=_credentials())
+    table = chr(96) + f"{project_id}.{dataset_id}.{table_id}" + chr(96)
+    query = f"""
+        SELECT
+          FORMAT_DATE('%Y-%m-%d', DATE(usage_start_time)) AS usage_date,
+          COALESCE(service.description, 'Unknown') AS service_name,
+          COALESCE(location.region, 'Unknown') AS region_name,
+          currency,
+          SUM(cost) AS total_cost,
+          SUM(usage.amount) AS usage_quantity
+        FROM {table}
+        WHERE DATE(usage_start_time) >= @start_date
+          AND DATE(usage_start_time) < @end_date
+        GROUP BY usage_date, service_name, region_name, currency
+        ORDER BY usage_date, service_name
+    """
+    job_config = bigquery.QueryJobConfig(query_parameters=[
+        bigquery.ScalarQueryParameter("start_date", "DATE", start_date),
+        bigquery.ScalarQueryParameter("end_date", "DATE", end_date),
+    ])
+    result = client.query(query, job_config=job_config).result()
+
+    rows = [{
+        "provider": "GCP",
+        "date": row.usage_date,
+        "service": row.service_name,
+        "region": row.region_name,
+        "cost_usd": float(row.total_cost),
+        "usage_quantity": float(row.usage_quantity or 0),
+        "currency": row.currency,
+    } for row in result]
 
     return {
         "provider": "GCP",
         "start_date": start_date,
         "end_date": end_date,
         "rows": rows,
-        "note": (
-            "For per-service cost breakdown, enable GCP Billing Export to BigQuery. "
-            "See docs/gcp_bigquery_setup.md for instructions."
-        ),
+        "source": "bigquery_billing_export",
     }
 
 
 def verify_connection() -> bool:
-    """Quick connectivity check — returns True if credentials are valid."""
+    """Check whether the configured BigQuery billing export can be queried."""
     try:
-        billing_account_id = os.getenv("GCP_BILLING_ACCOUNT_ID")
-        client = get_client()
-        request = billing_v1.GetBillingAccountRequest(
-            name=f"billingAccounts/{billing_account_id}"
-        )
-        account = client.get_billing_account(request=request)
-        print(f"[GCP] ✓ Connection successful — account: {account.display_name}")
+        project_id = os.getenv("GCP_BILLING_EXPORT_PROJECT_ID") or os.getenv("GCP_PROJECT_ID")
+        dataset_id = os.getenv("GCP_BILLING_EXPORT_DATASET")
+        table_id = os.getenv("GCP_BILLING_EXPORT_TABLE")
+        if not all((project_id, dataset_id, table_id)):
+            raise RuntimeError("BigQuery billing export environment variables are not configured.")
+        client = bigquery.Client(project=project_id, credentials=_credentials())
+        table = chr(96) + f"{project_id}.{dataset_id}.{table_id}" + chr(96)
+        client.query(f"SELECT 1 FROM {table} LIMIT 1").result()
+        print("[GCP] BigQuery billing export connection successful")
         return True
-    except Exception as e:
-        print(f"[GCP] ✗ Connection failed: {e}")
+    except Exception as exc:
+        print(f"[GCP] BigQuery billing export connection failed: {exc}")
         return False
 
 
 if __name__ == "__main__":
-    if verify_connection():
-        data = fetch_cost_and_usage()
-        out_path = "data/raw/gcp_sample.json"
-        with open(out_path, "w") as f:
-            json.dump(data, f, indent=2)
-        print(f"[GCP] Saved {len(data['rows'])} rows → {out_path}")
+    data = fetch_cost_and_usage()
+    print(f"[GCP] Retrieved {len(data['rows'])} billing rows")
