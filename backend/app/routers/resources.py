@@ -31,7 +31,7 @@ def get_resources():
             "resource_type": row.resource_type,
             "region": row.region,
             "status": row.status,
-            "monthly_cost": float(row.monthly_cost),
+            "monthly_cost": float(row.monthly_cost) if row.monthly_cost is not None else None,
         }
         for row in rows
     ]
