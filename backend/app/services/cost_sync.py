@@ -56,7 +56,7 @@ def sync_provider(provider: str, start_date: date, end_date: date) -> dict:
         ) from exc
 
     source_rows = result.get("rows", [])
-    if key == "gcp" or any(row.get("cost_usd") is None for row in source_rows):
+    if any(row.get("cost_usd") is None for row in source_rows):
         raise HTTPException(
             status_code=501,
             detail="GCP cost ingestion requires a configured Cloud Billing BigQuery export; no costs were written.",
