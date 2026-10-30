@@ -15,7 +15,7 @@ Centralized AWS, Azure, and GCP resource and cost monitoring.
 
 ## Scope and remaining work
 
-The authoritative six-sprint scope is in [docs/project-scope.txt](docs/project-scope.txt). Available code spans cloud collection, storage/API scaffolding, dashboard views, historical views, and alert-related components. Presence of a file does not establish completion: cloud connectivity, persistence, filters, calculations, notifications, and deployment still require validation. Azure/GCP backend placeholders and missing implementation should be completed as remaining files arrive. Docker, scheduled collection, and Prometheus Alertmanager integration must be checked against the final deliverables.
+The authoritative six-sprint scope is in [docs/project-scope.txt](docs/project-scope.txt). The development branch adds validated billing ingestion endpoints, an explicit PostgreSQL initializer, AWS Cost Explorer pagination and regional grouping, Azure multi-subscription collection, GCP BigQuery billing-export queries, manual dashboard sync, scheduled-sync tooling, and CI checks. Live cloud credentials, billing permissions, currencies, and totals still require validation in your environment. API authentication, full resource inventory for Azure/GCP, and deployment remain outstanding.
 
 See [installation guide](docs/installation-guide.md) and [cloud setup](docs/cloud-setup.md). The standalone scripts run from the root with `python scripts/verify_connections.py` and `python scripts/fetch_sample_data.py` after installing root requirements and configuring `.env`. The original setup notes reference tests and a BigQuery guide that were not supplied locally.
 
@@ -31,5 +31,5 @@ The selected Midnight theme is connected to the stored-data backend in this chec
 
 For a reproducible random-data preview, build the frontend and run `backend/.venv/Scripts/python scripts/dry_run_midnight.py --port 8001` from the repository root. This creates a separate demo database; it does not change real cloud data.
 
-The frontend build, six frontend checks and five backend checks pass locally. See the [dry-run results and production blockers](docs/qa/midnight-dry-run.md) and [theme-fix verification](docs/qa/midnight-theme-fix.md). This version is a local demonstration; public production still requires access protection, dependency advisory resolution, real ingestion/database validation and a staging deployment.
+GitHub Actions now runs backend unit tests, Python compilation, frontend data tests, and a frontend production build. Review the latest [Project checks workflow](https://github.com/Saro-87/CapstoneProject/actions). A green CI run validates code and test fixtures, not access to your live cloud accounts. Keep the pull request in draft until live billing totals and database behavior have been verified. Public production still requires authentication/authorization, dependency advisory review, and staging validation.
 
