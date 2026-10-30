@@ -80,7 +80,7 @@ def sync_provider(provider: str, start_date: date, end_date: date) -> dict:
             "region": str(row.get("region") or "Unknown"),
             "cost": amount,
             "usage": row.get("usage_quantity"),
-            "billing_date": _parse_date(row.get("date")).isoformat(),
+            "billing_date": _parse_date(row.get("date")),
         })
 
     # Delete only after fetch and validation have succeeded. If the API returns
@@ -99,8 +99,8 @@ def sync_provider(provider: str, start_date: date, end_date: date) -> dict:
               AND billing_date >= :start_date AND billing_date <= :end_date
         """), {
             "provider": key.upper(),
-            "start_date": start_date.isoformat(),
-            "end_date": end_date.isoformat(),
+            "start_date": start_date,
+            "end_date": end_date,
         })
         connection.execute(text("""
             INSERT INTO cloud_costs (provider, service, region, cost, usage, billing_date)
